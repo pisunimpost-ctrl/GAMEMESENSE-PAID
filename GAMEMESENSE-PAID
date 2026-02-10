@@ -1,17 +1,23 @@
--- Project Delta Lebyss.xys V5 (Stable Edition)
+-- Project Delta Lebyss.xys V5 (Fixed & Stable)
 getgenv().script_key = "BKGFKHSbjtLfFNtXUeQpyjBqydZQQSOq";
 getgenv().messagebox = function() end;
 
-
+-- [ОПТИМИЗАЦИЯ ГРАФИКИ]
 local function AntiLag()
     local lighting = game:GetService("Lighting")
     lighting.GlobalShadows = false
     lighting.FogEnd = 9e9
-    settings().Rendering.QualityLevel = 1
+    
+    -- Безопасная настройка качества
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end)
     
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("PostEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
             v.Enabled = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1 -- Убираем текстуры для FPS
         end
     end
 end
@@ -22,10 +28,10 @@ task.spawn(AntiLag)
 task.spawn(function()
     while task.wait(60) do
         collectgarbage("collect")
-        setfpscap(30) 
     end
 end)
 
+-- [БЕЗОПАСНАЯ ЗАГРУЗКА]
 local function SafeLoad()
     local url = "https://raw.githubusercontent.com/Kapclantyler/wfr/refs/heads/main/radianthub"
     
@@ -34,18 +40,20 @@ local function SafeLoad()
     end)
 
     if success and content then
+        -- Исправленный блок загрузки
         local func, err = loadstring(content)
         if func then
-            
-                local run, runErr = pcall(func)
-              if not run then warn("Script Error: " .. tostring(runErr)) end
-            end)
+            local runSuccess, runErr = pcall(func)
+            if not runSuccess then
+                warn("Ошибка выполнения скрипта: " .. tostring(runErr)) 
+            end
         else
-            warn("Loadstring Error: " .. tostring(err))
+            warn("Ошибка Loadstring (код хаба битый): " .. tostring(err))
         end
     else
-        warn("HTTP Error: Не удалось загрузить хаб")
+        warn("HTTP Error: Не удалось получить данные с GitHub")
     end
 end
 
-SafeLoad()
+-- Запуск через task.defer, чтобы не вешать поток
+task.defer(SafeLoad)
