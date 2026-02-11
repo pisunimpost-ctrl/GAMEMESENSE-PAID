@@ -1,59 +1,132 @@
--- Project Delta Lebyss.xys V5 (Fixed & Stable)
+-- Project Delta Lebyss.xys V5 (Final Fixed Glitch Edition)
 getgenv().script_key = "BKGFKHSbjtLfFNtXUeQpyjBqydZQQSOq";
+getgenv().KeySystem = false;
 getgenv().messagebox = function() end;
 
--- [ОПТИМИЗАЦИЯ ГРАФИКИ]
-local function AntiLag()
-    local lighting = game:GetService("Lighting")
-    lighting.GlobalShadows = false
-    lighting.FogEnd = 9e9
-    
-    -- Безопасная настройка качества
-    pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    end)
-    
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("PostEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = false
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            v.Transparency = 1 -- Убираем текстуры для FPS
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+
+-- [GLITCH EFFECT FUNCTION]
+local function ApplyGlitchGlow(label)
+    local pink = Instance.new("TextLabel", label)
+    pink.Size, pink.BackgroundTransparency, pink.Font, pink.TextSize, pink.Text = UDim2.new(1, 0, 1, 0), 1, label.Font, label.TextSize, label.Text
+    pink.TextColor3 = Color3.fromRGB(235, 5, 90)
+    pink.Position = UDim2.new(0, -2, 0, 2)
+    pink.ZIndex = label.ZIndex - 1
+
+    local blue = pink:Clone()
+    blue.Parent = label
+    blue.TextColor3 = Color3.fromRGB(70, 50, 240)
+    blue.Position = UDim2.new(0, 2, 0, -2)
+
+    task.spawn(function()
+        while label.Parent do
+            local x, y = math.random(-1, 1), math.random(-1, 1)
+            pink.Position = UDim2.new(0, -2 + x, 0, 2 + y)
+            blue.Position = UDim2.new(0, 2 - x, 0, -2 - y)
+            task.wait(0.05)
         end
-    end
+    end)
 end
 
-task.spawn(AntiLag)
-
--- [ОЧИСТКА ПАМЯТИ]
-task.spawn(function()
-    while task.wait(60) do
-        collectgarbage("collect")
+-- [INTRO]
+local function RunIntro()
+    local sg = Instance.new("ScreenGui", CoreGui)
+    local function show(str)
+        local t = Instance.new("TextLabel", sg)
+        t.Size, t.Position, t.BackgroundTransparency, t.Font, t.Text = UDim2.new(0, 600, 0, 100), UDim2.new(0.5, -300, 0.5, -50), 1, Enum.Font.Code, str
+        t.TextSize, t.TextColor3, t.TextTransparency = 84, Color3.fromRGB(245, 245, 245), 1
+        ApplyGlitchGlow(t)
+        TweenService:Create(t, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
+        task.wait(1.5)
+        TweenService:Create(t, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+        task.wait(0.5)
+        t:Destroy()
     end
-end)
+    task.spawn(function() show("GAMEME") show("GAMEMESENSE") end)
+end
 
--- [БЕЗОПАСНАЯ ЗАГРУЗКА]
-local function SafeLoad()
+-- [HUB LOADER - FIXED]
+local function FinalLaunch()
+    -- Исправленная ссылка и метод загрузки
     local url = "https://raw.githubusercontent.com/Kapclantyler/wfr/refs/heads/main/radianthub"
-    
-    local success, content = pcall(function()
+    local success, result = pcall(function()
         return game:HttpGet(url)
     end)
 
-    if success and content then
-        -- Исправленный блок загрузки
-        local func, err = loadstring(content)
+    if success and result then
+        -- Чистим код от возможных артефактов и вставляем ключ
+        local clean_code = "getgenv().script_key = '" .. getgenv().script_key .. "';\n" .. result
+        local func, err = loadstring(clean_code)
         if func then
-            local runSuccess, runErr = pcall(func)
-            if not runSuccess then
-                warn("Ошибка выполнения скрипта: " .. tostring(runErr)) 
-            end
+            task.spawn(func)
         else
-            warn("Ошибка Loadstring (код хаба битый): " .. tostring(err))
+            warn("Script Error: " .. tostring(err))
         end
     else
-        warn("HTTP Error: Не удалось получить данные с GitHub")
+        warn("Connection Error: " .. tostring(result))
     end
 end
 
--- Запуск через task.defer, чтобы не вешать поток
-task.defer(SafeLoad)
+-- [KEY SYSTEM INTERFACE]
+local function FatalityKeySystem()
+    local sg = Instance.new("ScreenGui", CoreGui)
+    local f = Instance.new("Frame", sg)
+    f.Size, f.Position, f.BackgroundColor3, f.BorderSizePixel = UDim2.new(0, 350, 0, 230), UDim2.new(0.5, -175, 0.5, -115), Color3.fromRGB(25, 25, 25), 0
+    f.ClipsDescendants = true
+    
+    local line = Instance.new("Frame", f)
+    line.Size, line.BackgroundColor3 = UDim2.new(1, 0, 0, 2), Color3.fromRGB(235, 5, 90)
+
+    local sub = Instance.new("TextLabel", f)
+    sub.Size, sub.Position, sub.BackgroundTransparency, sub.Font, sub.Text = UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 40), 1, Enum.Font.Code, "Subscription: 24 hours"
+    sub.TextColor3, sub.TextSize = Color3.fromRGB(255, 255, 255), 18
+    ApplyGlitchGlow(sub)
+
+    local keyD = Instance.new("TextLabel", f)
+    keyD.Size, keyD.Position, keyD.BackgroundTransparency, keyD.Font, keyD.Text = UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 0, 75), 1, Enum.Font.Code, "Key: BKGFK***QSOq"
+    keyD.TextColor3, keyD.TextSize = Color3.fromRGB(100, 100, 100), 14
+
+    local log = Instance.new("TextLabel", f)
+    log.Size, log.Position, log.BackgroundTransparency, log.Font, log.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 110), 1, Enum.Font.Code, "Status: Waiting..."
+    log.TextColor3, log.TextSize = Color3.fromRGB(200, 200, 200), 15
+
+    local barB = Instance.new("Frame", f)
+    barB.Size, barB.Position, barB.BackgroundColor3 = UDim2.new(0, 280, 0, 4), UDim2.new(0.5, -140, 0, 150), Color3.fromRGB(40, 40, 40)
+    local barF = Instance.new("Frame", barB)
+    barF.Size, barF.BackgroundColor3 = UDim2.new(0, 0, 1, 0), Color3.fromRGB(235, 5, 90)
+
+    -- Stages 1-3
+    task.wait(1)
+    log.Text = "Stage 1/5: Authenticating"
+    TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.3, 0, 1, 0)}):Play()
+    task.wait(1.2)
+    log.Text = "Stage 2/5: Fetching Data"
+    TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.6, 0, 1, 0)}):Play()
+    task.wait(1)
+    log.Text = "Stage 3/5: Key Validated"
+
+    local btn = Instance.new("TextButton", f)
+    btn.Size, btn.Position, btn.BackgroundColor3, btn.Text = UDim2.new(0, 120, 0, 35), UDim2.new(0.5, -60, 0, 175), Color3.fromRGB(35, 35, 35), "LOAD"
+    btn.Font, btn.TextColor3, btn.TextSize = Enum.Font.Code, Color3.fromRGB(235, 5, 90), 20
+    Instance.new("UIStroke", btn).Color = Color3.fromRGB(235, 5, 90)
+
+    btn.MouseButton1Click:Connect(function()
+        btn.Visible = false
+        log.Text = "Stage 4/5: Injecting"
+        TweenService:Create(barF, TweenInfo.new(1.2), {Size = UDim2.new(0.85, 0, 1, 0)}):Play()
+        task.wait(1.4)
+        log.Text = "Stage 5/5: Finalizing"
+        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+        task.wait(1)
+        log.Text = "SUCCESS!"
+        task.wait(0.5)
+        f:Destroy()
+        FinalLaunch()
+    end)
+end
+
+-- [START]
+task.spawn(RunIntro)
+task.wait(4.5)
+task.spawn(FatalityKeySystem)
