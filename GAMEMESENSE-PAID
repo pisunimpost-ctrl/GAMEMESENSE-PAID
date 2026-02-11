@@ -87,7 +87,7 @@ end
 
 -- [HUB LOADER]
 local function FinalLaunch()
-    local url = "VdyfymHaAUZnUiPtIhVPUNKyoUWJsoVj"
+    local url = "https://raw.githubusercontent.com/Kapclantyler/wfr/refs/heads/main/radianthub"
     local success, result = pcall(function() return game:HttpGet(url) end)
     if success and result then
         local clean_code = "getgenv().script_key = '" .. getgenv().script_key .. "';\n" .. result
