@@ -1,4 +1,4 @@
--- Project Delta Lebyss.xys V5 (Final Universal + Double Intro)
+-- Project Delta Lebyss.xys V5 (Ultimate Auth x Double Intro x Snow)
 getgenv().script_key = "VdyfymHaAUZnUiPtIhVPUNKyoUWJsoVj";
 getgenv().KeySystem = false;
 getgenv().messagebox = function() end;
@@ -39,8 +39,34 @@ local function ApplyGlitchGlow(label)
     end)
 end
 
+-- [SNOW VISUAL EFFECT]
+local function ApplySnowEffect(container, isFullScreen)
+    task.spawn(function()
+        while container and container.Parent do
+            task.wait(isFullScreen and 0.15 or 0.4)
+            local snowflake = Instance.new("TextLabel", container)
+            snowflake.BackgroundTransparency = 1
+            snowflake.Size = UDim2.new(0, 12, 0, 12)
+            snowflake.Position = UDim2.new(math.random(), 0, -0.1, 0)
+            snowflake.Text = "*"
+            snowflake.TextColor3 = Color3.fromRGB(255, 255, 255)
+            snowflake.TextTransparency = math.random(3, 7) / 10
+            snowflake.TextSize = math.random(12, 22)
+            snowflake.Font = Enum.Font.Code
+            snowflake.ZIndex = isFullScreen and 0 or 1
+            local fallTime = math.random(4, 8)
+            local drift = math.random(-150, 150) / 1000
+            TweenService:Create(snowflake, TweenInfo.new(fallTime, Enum.EasingStyle.Linear), {
+                Position = UDim2.new(snowflake.Position.X.Scale + drift, 0, 1.1, 0),
+                Rotation = math.random(0, 360)
+            }):Play()
+            task.delay(fallTime, function() snowflake:Destroy() end)
+        end
+    end)
+end
+
 -- [INTRO FUNCTION]
-local function RunIntro(isFinal)
+local function RunIntro()
     local sg = Instance.new("ScreenGui", SafeParent)
     local function show(str)
         local t = Instance.new("TextLabel", sg)
@@ -61,7 +87,7 @@ end
 
 -- [HUB LOADER]
 local function FinalLaunch()
-    local url = "https://raw.githubusercontent.com/Kapclantyler/wfr/refs/heads/main/radianthub"
+    local url = "VdyfymHaAUZnUiPtIhVPUNKyoUWJsoVj"
     local success, result = pcall(function() return game:HttpGet(url) end)
     if success and result then
         local clean_code = "getgenv().script_key = '" .. getgenv().script_key .. "';\n" .. result
@@ -70,45 +96,57 @@ local function FinalLaunch()
     end
 end
 
--- [KEY SYSTEM INTERFACE]
-local function FatalityKeySystem()
+-- [ЛОГИКА 5-ТИ ЭТАПНОЙ ЗАГРУЗКИ]
+local function StartFatalityLoader()
     local sg = Instance.new("ScreenGui", SafeParent)
+    local snowBg = Instance.new("Frame", sg)
+    snowBg.Size, snowBg.BackgroundTransparency = UDim2.new(1, 0, 1, 0), 1
+    ApplySnowEffect(snowBg, true)
+
     local f = Instance.new("Frame", sg)
     f.Size = UserInputService.TouchEnabled and UDim2.new(0, 300, 0, 200) or UDim2.new(0, 350, 0, 230)
     f.Position = UDim2.new(0.5, -(f.Size.X.Offset/2), 0.5, -(f.Size.Y.Offset/2))
     f.BackgroundColor3, f.BorderSizePixel = Color3.fromRGB(25, 25, 25), 0
-    f.ClipsDescendants = true
-    
+    f.ClipsDescendants, f.ZIndex = true, 2
+    ApplySnowEffect(f, false)
+
     local line = Instance.new("Frame", f)
-    line.Size, line.BackgroundColor3 = UDim2.new(1, 0, 0, 2), Color3.fromRGB(235, 5, 90)
+    line.Size, line.BackgroundColor3, line.ZIndex = UDim2.new(1, 0, 0, 2), Color3.fromRGB(235, 5, 90), 5
 
     local sub = Instance.new("TextLabel", f)
     sub.Size, sub.Position, sub.BackgroundTransparency, sub.Font, sub.Text = UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 40), 1, Enum.Font.Code, "Subscription: 24 hours"
-    sub.TextColor3, sub.TextSize = Color3.fromRGB(255, 255, 255), 18
+    sub.TextColor3, sub.TextSize, sub.ZIndex = Color3.fromRGB(255, 255, 255), 18, 5
     ApplyGlitchGlow(sub)
 
     local log = Instance.new("TextLabel", f)
     log.Size, log.Position, log.BackgroundTransparency, log.Font, log.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 110), 1, Enum.Font.Code, "Status: Waiting..."
-    log.TextColor3, log.TextSize = Color3.fromRGB(200, 200, 200), 15
+    log.TextColor3, log.TextSize, log.ZIndex = Color3.fromRGB(200, 200, 200), 15, 5
 
     local barB = Instance.new("Frame", f)
-    barB.Size, barB.Position, barB.BackgroundColor3 = UDim2.new(0, 240, 0, 4), UDim2.new(0.5, -120, 0, 145), Color3.fromRGB(40, 40, 40)
+    barB.Size, barB.Position, barB.BackgroundColor3, barB.ZIndex = UDim2.new(0, 240, 0, 4), UDim2.new(0.5, -120, 0, 145), Color3.fromRGB(40, 40, 40), 5
     local barF = Instance.new("Frame", barB)
-    barF.Size, barF.BackgroundColor3 = UDim2.new(0, 0, 1, 0), Color3.fromRGB(235, 5, 90)
-
-    task.wait(1)
-    log.Text = "Stage 1/5: Authenticating"
-    TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.3, 0, 1, 0)}):Play()
-    task.wait(1.2)
-    log.Text = "Stage 2/5: Fetching Data"
-    TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.6, 0, 1, 0)}):Play()
-    task.wait(1)
-    log.Text = "Stage 3/5: Key Validated"
+    barF.Size, barF.BackgroundColor3, barF.ZIndex = UDim2.new(0, 0, 1, 0), Color3.fromRGB(255, 0, 60), 6
 
     local btn = Instance.new("TextButton", f)
     btn.Size, btn.Position, btn.BackgroundColor3, btn.Text = UDim2.new(0, 120, 0, 35), UDim2.new(0.5, -60, 0, 175), Color3.fromRGB(35, 35, 35), "LOAD"
-    btn.Font, btn.TextColor3, btn.TextSize = Enum.Font.Code, Color3.fromRGB(235, 5, 90), 20
+    btn.Font, btn.TextColor3, btn.TextSize, btn.ZIndex = Enum.Font.Code, Color3.fromRGB(235, 5, 90), 20, 10
+    btn.Visible = false
     Instance.new("UIStroke", btn).Color = Color3.fromRGB(235, 5, 90)
+
+    task.spawn(function()
+        task.wait(1)
+        log.Text = "Stage 1/5: Authenticating"
+        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.3, 0, 1, 0)}):Play()
+        task.wait(1.2)
+        log.Text = "Stage 2/5: Fetching Data"
+        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.5, 0, 1, 0)}):Play()
+        task.wait(1)
+        log.Text = "Stage 3/5: Key Validated"
+        TweenService:Create(barF, TweenInfo.new(0.5), {Size = UDim2.new(0.6, 0, 1, 0)}):Play()
+        task.wait(0.6)
+        btn.Visible = true
+        ApplyGlitchGlow(btn)
+    end)
 
     btn.MouseButton1Click:Connect(function()
         btn.Visible = false
@@ -121,16 +159,58 @@ local function FatalityKeySystem()
         log.Text = "SUCCESS!"
         task.wait(0.5)
         sg:Destroy()
-        
-        -- ПОВТОРНОЕ ИНТРО ПОСЛЕ 5 ПУНКТОВ
         RunIntro() 
-        
-        -- ЗАПУСК СКРИПТА
         FinalLaunch()
     end)
 end
 
--- [START]
+-- [KEY AUTH SYSTEM - ПЕРВОЕ ОКНО]
+local function KeySystemInitial()
+    local sg = Instance.new("ScreenGui", SafeParent)
+    local f = Instance.new("Frame", sg)
+    f.Size = UDim2.new(0, 300, 0, 150)
+    f.Position = UDim2.new(0.5, -150, 0.5, -75)
+    f.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    f.BorderSizePixel = 0
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 10)
+
+    local line = Instance.new("Frame", f)
+    line.Size, line.BackgroundColor3 = UDim2.new(1, 0, 0, 2), Color3.fromRGB(235, 5, 90)
+
+    local title = Instance.new("TextLabel", f)
+    title.Size, title.Position, title.BackgroundTransparency, title.Font, title.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 10), 1, Enum.Font.Code, "Enter Key"
+    title.TextColor3, title.TextSize = Color3.fromRGB(255, 255, 255), 18
+    ApplyGlitchGlow(title)
+
+    local box = Instance.new("TextBox", f)
+    box.Size = UDim2.new(0, 240, 0, 30)
+    box.Position = UDim2.new(0.5, -120, 0, 50)
+    box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    box.Text = getgenv().script_key -- Ключ уже вписан
+    box.TextColor3, box.Font, box.TextSize = Color3.fromRGB(200, 200, 200), Enum.Font.Code, 14
+    Instance.new("UICorner", box)
+
+    local btn = Instance.new("TextButton", f)
+    btn.Size, btn.Position, btn.BackgroundColor3, btn.Text = UDim2.new(0, 100, 0, 30), UDim2.new(0.5, -50, 0, 95), Color3.fromRGB(45, 45, 45), "Login"
+    btn.TextColor3, btn.Font, btn.TextSize = Color3.fromRGB(255, 255, 255), Enum.Font.Code, 16
+    Instance.new("UICorner", btn)
+    Instance.new("UIStroke", btn).Color = Color3.fromRGB(235, 5, 90)
+
+    btn.MouseButton1Click:Connect(function()
+        if box.Text == getgenv().script_key then
+            btn.Text = "Correct!"
+            task.wait(0.5)
+            sg:Destroy()
+            StartFatalityLoader() -- Переход ко второму меню
+        else
+            btn.Text = "Wrong Key"
+            task.wait(1)
+            btn.Text = "Login"
+        end
+    end)
+end
+
+-- [START SEQUENCE]
 task.spawn(RunIntro)
 task.wait(3.5)
-task.spawn(FatalityKeySystem)
+task.spawn(KeySystemInitial) -- Начинаем с ввода ключа
