@@ -1,10 +1,20 @@
--- Project Delta Lebyss.xys V5 (Final Fixed Glitch Edition)
-getgenv().script_key = "BKGFKHSbjtLfFNtXUeQpyjBqydZQQSOq";
+-- Project Delta Lebyss.xys V5 (Final Universal + Double Intro)
+getgenv().script_key = "VdyfymHaAUZnUiPtIhVPUNKyoUWJsoVj";
 getgenv().KeySystem = false;
 getgenv().messagebox = function() end;
 
+local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local function GetGuiParent()
+    local success, _ = pcall(function() return CoreGui.Name end)
+    if success then return CoreGui end
+    return Players.LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local SafeParent = GetGuiParent()
 
 -- [GLITCH EFFECT FUNCTION]
 local function ApplyGlitchGlow(label)
@@ -20,7 +30,7 @@ local function ApplyGlitchGlow(label)
     blue.Position = UDim2.new(0, 2, 0, -2)
 
     task.spawn(function()
-        while label.Parent do
+        while label and label.Parent do
             local x, y = math.random(-1, 1), math.random(-1, 1)
             pink.Position = UDim2.new(0, -2 + x, 0, 2 + y)
             blue.Position = UDim2.new(0, 2 - x, 0, -2 - y)
@@ -29,50 +39,44 @@ local function ApplyGlitchGlow(label)
     end)
 end
 
--- [INTRO]
-local function RunIntro()
-    local sg = Instance.new("ScreenGui", CoreGui)
+-- [INTRO FUNCTION]
+local function RunIntro(isFinal)
+    local sg = Instance.new("ScreenGui", SafeParent)
     local function show(str)
         local t = Instance.new("TextLabel", sg)
+        local fontSize = UserInputService.TouchEnabled and 50 or 84
         t.Size, t.Position, t.BackgroundTransparency, t.Font, t.Text = UDim2.new(0, 600, 0, 100), UDim2.new(0.5, -300, 0.5, -50), 1, Enum.Font.Code, str
-        t.TextSize, t.TextColor3, t.TextTransparency = 84, Color3.fromRGB(245, 245, 245), 1
+        t.TextSize, t.TextColor3, t.TextTransparency = fontSize, Color3.fromRGB(245, 245, 245), 1
         ApplyGlitchGlow(t)
         TweenService:Create(t, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-        task.wait(1.5)
+        task.wait(1.2)
         TweenService:Create(t, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
-        task.wait(0.5)
+        task.wait(0.3)
         t:Destroy()
     end
-    task.spawn(function() show("GAMEME") show("GAMEMESENSE") end)
+    show("GAMEME")
+    show("GAMEMESENSE")
+    sg:Destroy()
 end
 
--- [HUB LOADER - FIXED]
+-- [HUB LOADER]
 local function FinalLaunch()
-    -- Исправленная ссылка и метод загрузки
     local url = "https://raw.githubusercontent.com/Kapclantyler/wfr/refs/heads/main/radianthub"
-    local success, result = pcall(function()
-        return game:HttpGet(url)
-    end)
-
+    local success, result = pcall(function() return game:HttpGet(url) end)
     if success and result then
-        -- Чистим код от возможных артефактов и вставляем ключ
         local clean_code = "getgenv().script_key = '" .. getgenv().script_key .. "';\n" .. result
-        local func, err = loadstring(clean_code)
-        if func then
-            task.spawn(func)
-        else
-            warn("Script Error: " .. tostring(err))
-        end
-    else
-        warn("Connection Error: " .. tostring(result))
+        local func = loadstring(clean_code)
+        if func then task.spawn(func) end
     end
 end
 
 -- [KEY SYSTEM INTERFACE]
 local function FatalityKeySystem()
-    local sg = Instance.new("ScreenGui", CoreGui)
+    local sg = Instance.new("ScreenGui", SafeParent)
     local f = Instance.new("Frame", sg)
-    f.Size, f.Position, f.BackgroundColor3, f.BorderSizePixel = UDim2.new(0, 350, 0, 230), UDim2.new(0.5, -175, 0.5, -115), Color3.fromRGB(25, 25, 25), 0
+    f.Size = UserInputService.TouchEnabled and UDim2.new(0, 300, 0, 200) or UDim2.new(0, 350, 0, 230)
+    f.Position = UDim2.new(0.5, -(f.Size.X.Offset/2), 0.5, -(f.Size.Y.Offset/2))
+    f.BackgroundColor3, f.BorderSizePixel = Color3.fromRGB(25, 25, 25), 0
     f.ClipsDescendants = true
     
     local line = Instance.new("Frame", f)
@@ -83,20 +87,15 @@ local function FatalityKeySystem()
     sub.TextColor3, sub.TextSize = Color3.fromRGB(255, 255, 255), 18
     ApplyGlitchGlow(sub)
 
-    local keyD = Instance.new("TextLabel", f)
-    keyD.Size, keyD.Position, keyD.BackgroundTransparency, keyD.Font, keyD.Text = UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 0, 75), 1, Enum.Font.Code, "Key: BKGFK***QSOq"
-    keyD.TextColor3, keyD.TextSize = Color3.fromRGB(100, 100, 100), 14
-
     local log = Instance.new("TextLabel", f)
     log.Size, log.Position, log.BackgroundTransparency, log.Font, log.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 110), 1, Enum.Font.Code, "Status: Waiting..."
     log.TextColor3, log.TextSize = Color3.fromRGB(200, 200, 200), 15
 
     local barB = Instance.new("Frame", f)
-    barB.Size, barB.Position, barB.BackgroundColor3 = UDim2.new(0, 280, 0, 4), UDim2.new(0.5, -140, 0, 150), Color3.fromRGB(40, 40, 40)
+    barB.Size, barB.Position, barB.BackgroundColor3 = UDim2.new(0, 240, 0, 4), UDim2.new(0.5, -120, 0, 145), Color3.fromRGB(40, 40, 40)
     local barF = Instance.new("Frame", barB)
     barF.Size, barF.BackgroundColor3 = UDim2.new(0, 0, 1, 0), Color3.fromRGB(235, 5, 90)
 
-    -- Stages 1-3
     task.wait(1)
     log.Text = "Stage 1/5: Authenticating"
     TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.3, 0, 1, 0)}):Play()
@@ -121,12 +120,17 @@ local function FatalityKeySystem()
         task.wait(1)
         log.Text = "SUCCESS!"
         task.wait(0.5)
-        f:Destroy()
+        sg:Destroy()
+        
+        -- ПОВТОРНОЕ ИНТРО ПОСЛЕ 5 ПУНКТОВ
+        RunIntro() 
+        
+        -- ЗАПУСК СКРИПТА
         FinalLaunch()
     end)
 end
 
 -- [START]
 task.spawn(RunIntro)
-task.wait(4.5)
+task.wait(3.5)
 task.spawn(FatalityKeySystem)
