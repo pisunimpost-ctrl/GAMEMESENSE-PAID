@@ -1,4 +1,4 @@
--- Project Delta Lebyss.xys V5 (Ultimate Auth x Double Intro x Snow)
+-- Project Delta Lebyss.xys V5 (Ultimate Security x Double Intro x Snow)
 getgenv().script_key = "VdyfymHaAUZnUiPtIhVPUNKyoUWJsoVj";
 getgenv().KeySystem = false;
 getgenv().messagebox = function() end;
@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local function GetGuiParent()
     local success, _ = pcall(function() return CoreGui.Name end)
@@ -16,53 +17,214 @@ end
 
 local SafeParent = GetGuiParent()
 
--- [GLITCH EFFECT FUNCTION]
+-- [СОХРАНЕНИЕ КЛЮЧА В ФАЙЛ (ДЛЯ ПОСТОЯННОГО ИСПОЛЬЗОВАНИЯ)]
+local KEY_FILE = "Lebyss_key.txt"
+local function SaveKeyToFile(key)
+    local success, err = pcall(function()
+        writefile(KEY_FILE, key)
+    end)
+    if not success then
+        warn("Failed to save key: " .. tostring(err))
+    end
+end
+
+local function LoadKeyFromFile()
+    local success, data = pcall(function()
+        return readfile(KEY_FILE)
+    end)
+    if success and data then
+        return data
+    end
+    return nil
+end
+
+-- [ФУНКЦИЯ ОПРЕДЕЛЕНИЯ ИНЖЕКТОРА + ПРОВЕРКА API]
+local function GetExecutor()
+    local exec = (identifyexecutor and identifyexecutor()) or (getexecutorname and getexecutorname()) or "Unknown Executor"
+    return exec
+end
+
+-- [УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ВОСПРОИЗВЕДЕНИЯ ЗВУКОВ]
+local function PlaySound(soundId, volume)
+    local success, err = pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = soundId
+        sound.Volume = volume or 0.4
+        sound.Parent = CoreGui or game:GetService("SoundService")
+        sound:Play()
+        game:GetService("Debris"):AddItem(sound, 3)
+    end)
+    if not success then
+        warn("Sound error: " .. tostring(err))
+    end
+end
+
+-- [ЗВУКИ ДЛЯ РАЗНЫХ ДЕЙСТВИЙ]
+local SOUNDS = {
+    Click = "rbxassetid://142070127",      -- клик
+    Whoosh = "rbxassetid://9120386434",    -- открытие/закрытие
+    Pop = "rbxassetid://138190075",        -- лёгкий поп
+    Error = "rbxassetid://167329837",      -- ошибка
+    Success = "rbxassetid://9120386440"    -- успех
+}
+
+-- [УЛУЧШЕННЫЙ GLITCH EFFECT – ТОЧНОЕ НАЛОЖЕНИЕ (СМЕЩЕНИЕ 1PX)]
 local function ApplyGlitchGlow(label)
     local pink = Instance.new("TextLabel", label)
-    pink.Size, pink.BackgroundTransparency, pink.Font, pink.TextSize, pink.Text = UDim2.new(1, 0, 1, 0), 1, label.Font, label.TextSize, label.Text
+    pink.Size = UDim2.new(1, 0, 1, 0)
+    pink.BackgroundTransparency = 1
+    pink.Font = label.Font
+    pink.TextSize = label.TextSize
+    pink.Text = label.Text
     pink.TextColor3 = Color3.fromRGB(235, 5, 90)
-    pink.Position = UDim2.new(0, -2, 0, 2)
+    pink.Position = UDim2.new(0, -1, 0, 1)
     pink.ZIndex = label.ZIndex - 1
+    pink.TextXAlignment = label.TextXAlignment
+    pink.TextYAlignment = label.TextYAlignment
 
     local blue = pink:Clone()
     blue.Parent = label
     blue.TextColor3 = Color3.fromRGB(70, 50, 240)
-    blue.Position = UDim2.new(0, 2, 0, -2)
+    blue.Position = UDim2.new(0, 1, 0, -1)
 
     task.spawn(function()
         while label and label.Parent do
             local x, y = math.random(-1, 1), math.random(-1, 1)
-            pink.Position = UDim2.new(0, -2 + x, 0, 2 + y)
-            blue.Position = UDim2.new(0, 2 - x, 0, -2 - y)
-            task.wait(0.05)
+            pink.Position = UDim2.new(0, -1 + x, 0, 1 + y)
+            blue.Position = UDim2.new(0, 1 - x, 0, -1 - y)
+            task.wait(0.06)
         end
     end)
 end
 
--- [SNOW VISUAL EFFECT]
+-- [ОСНОВНОЙ СНЕЖНЫЙ ЭФФЕКТ (для фона)]
 local function ApplySnowEffect(container, isFullScreen)
     task.spawn(function()
         while container and container.Parent do
             task.wait(isFullScreen and 0.15 or 0.4)
             local snowflake = Instance.new("TextLabel", container)
-            snowflake.BackgroundTransparency = 1
-            snowflake.Size = UDim2.new(0, 12, 0, 12)
+            snowflake.BackgroundTransparency, snowflake.Size = 1, UDim2.new(0, 12, 0, 12)
             snowflake.Position = UDim2.new(math.random(), 0, -0.1, 0)
-            snowflake.Text = "*"
-            snowflake.TextColor3 = Color3.fromRGB(255, 255, 255)
-            snowflake.TextTransparency = math.random(3, 7) / 10
-            snowflake.TextSize = math.random(12, 22)
-            snowflake.Font = Enum.Font.Code
-            snowflake.ZIndex = isFullScreen and 0 or 1
+            snowflake.Text, snowflake.TextColor3 = "*", Color3.fromRGB(255, 255, 255)
+            snowflake.TextTransparency, snowflake.TextSize = math.random(3, 7) / 10, math.random(12, 22)
+            snowflake.Font, snowflake.ZIndex = Enum.Font.Code, isFullScreen and 0 or 1
             local fallTime = math.random(4, 8)
-            local drift = math.random(-150, 150) / 1000
             TweenService:Create(snowflake, TweenInfo.new(fallTime, Enum.EasingStyle.Linear), {
-                Position = UDim2.new(snowflake.Position.X.Scale + drift, 0, 1.1, 0),
+                Position = UDim2.new(snowflake.Position.X.Scale + (math.random(-150, 150) / 1000), 0, 1.1, 0),
                 Rotation = math.random(0, 360)
             }):Play()
             task.delay(fallTime, function() snowflake:Destroy() end)
         end
     end)
+end
+
+-- [БЫСТРЫЕ БОЛЬШИЕ СНЕЖИНКИ ДЛЯ ОКНА ЗАГРУЗКИ (СИМВОЛЫ )]
+local function ApplyFastSnow(container)
+    local snowSymbols = { "", "", "" }
+    task.spawn(function()
+        while container and container.Parent do
+            task.wait(0.08)
+            local snowflake = Instance.new("TextLabel", container)
+            snowflake.BackgroundTransparency = 1
+            snowflake.Size = UDim2.new(0, math.random(18, 28), 0, math.random(18, 28))
+            snowflake.Position = UDim2.new(math.random(), 0, -0.1, 0)
+            snowflake.Text = snowSymbols[math.random(1, 3)]
+            snowflake.TextColor3 = Color3.fromRGB(255, 255, 255)
+            snowflake.TextTransparency = math.random(2, 6) / 10
+            snowflake.TextSize = snowflake.Size.X.Offset * 0.8
+            snowflake.Font = Enum.Font.Code
+            snowflake.ZIndex = 3
+            local fallTime = math.random(2, 4)
+            TweenService:Create(snowflake, TweenInfo.new(fallTime, Enum.EasingStyle.Linear), {
+                Position = UDim2.new(snowflake.Position.X.Scale + (math.random(-200, 200) / 1000), 0, 1.2, 0),
+                Rotation = math.random(0, 360)
+            }):Play()
+            task.delay(fallTime, function() snowflake:Destroy() end)
+        end
+    end)
+end
+
+-- [СВЕТЯЩАЯСЯ НАДПИСЬ Lebyss.xys (ТОЛЬКО ГЛИТЧ, БЕЗ БЕЛОГО ТЕКСТА)]
+local function CreateGlowingLebyssOverlay()
+    local sg = Instance.new("ScreenGui", SafeParent)
+    sg.Name = "LebyssGlowingOverlay"
+    sg.DisplayOrder = 999
+    sg.IgnoreGuiInset = true
+    sg.ResetOnSpawn = false
+
+    local label = Instance.new("TextLabel", sg)
+    label.Size = UDim2.new(0, 300, 0, 60)
+    label.Position = UDim2.new(0.5, -150, 0, 15)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Code
+    label.Text = "Lebyss.xys"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 36
+    label.TextScaled = true
+    label.TextWrapped = true
+    label.ZIndex = 1000
+    label.TextXAlignment = Enum.TextXAlignment.Center
+    label.TextYAlignment = Enum.TextYAlignment.Top
+    
+    -- Делаем основной текст полностью прозрачным – остаётся только цветное свечение
+    label.TextTransparency = 1
+    
+    ApplyGlitchGlow(label)
+
+    return sg
+end
+
+-- [ПОСТОЯННЫЙ РЕАЛЬНЫЙ СЧЁТЧИК FPS – ВИДИМЫЙ БЕЛЫЙ ТЕКСТ С ПОДСВЕТКОЙ]
+local function CreateFPSDisplay()
+    local sg = Instance.new("ScreenGui", SafeParent)
+    sg.Name = "FPSDisplay"
+    sg.DisplayOrder = 1000
+    sg.IgnoreGuiInset = true
+    sg.ResetOnSpawn = false
+
+    local fpsLabel = Instance.new("TextLabel", sg)
+    fpsLabel.Size = UDim2.new(0, 100, 0, 30)
+    fpsLabel.Position = UDim2.new(0, 5, 1, -35) -- левый нижний угол
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.Font = Enum.Font.Code
+    fpsLabel.Text = "FPS: 0"
+    fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    fpsLabel.TextSize = 20
+    fpsLabel.TextScaled = true
+    fpsLabel.TextWrapped = true
+    fpsLabel.ZIndex = 1000
+    fpsLabel.TextXAlignment = Enum.TextXAlignment.Left
+    fpsLabel.TextYAlignment = Enum.TextYAlignment.Bottom
+    
+    -- ВИДИМЫЙ БЕЛЫЙ ТЕКСТ (НЕ ПРОЗРАЧНЫЙ)
+    fpsLabel.TextTransparency = 0
+    
+    -- Добавляем глитч (розово-синее свечение) – как у Lebyss.xys
+    ApplyGlitchGlow(fpsLabel)
+
+    -- Реальное обновление FPS через RenderStepped
+    local lastTime = os.clock()
+    local frameCount = 0
+    local connection
+    
+    connection = RunService.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        local now = os.clock()
+        if now - lastTime >= 0.5 then
+            local fps = math.floor(frameCount / (now - lastTime) + 0.5)
+            fpsLabel.Text = "FPS: " .. fps
+            frameCount = 0
+            lastTime = now
+        end
+    end)
+
+    sg.Destroying:Connect(function()
+        if connection then
+            connection:Disconnect()
+        end
+    end)
+
+    return sg
 end
 
 -- [INTRO FUNCTION]
@@ -85,18 +247,213 @@ local function RunIntro()
     sg:Destroy()
 end
 
--- [HUB LOADER]
+-- [HUB LOADER – URL ЗАМЕНЁН]
 local function FinalLaunch()
     local url = "https://raw.githubusercontent.com/Kapclantyler/wfr/refs/heads/main/radianthub"
     local success, result = pcall(function() return game:HttpGet(url) end)
     if success and result then
         local clean_code = "getgenv().script_key = '" .. getgenv().script_key .. "';\n" .. result
         local func = loadstring(clean_code)
-        if func then task.spawn(func) end
+        if func then 
+            task.spawn(func) 
+        end
     end
 end
 
--- [ЛОГИКА 5-ТИ ЭТАПНОЙ ЗАГРУЗКИ]
+-- [ФУНКЦИЯ СОЗДАНИЯ ИНФОРМАЦИОННОГО МЕНЮ С ЗВУКОМ ОТКРЫТИЯ]
+local function CreateInfoMenu(parent)
+    PlaySound(SOUNDS.Whoosh, 0.4)
+
+    local menu = Instance.new("Frame", parent)
+    menu.Size = UDim2.new(0, 460, 0, 380)
+    menu.Position = UDim2.new(0.5, -230, 0.5, -190)
+    menu.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    menu.BorderSizePixel = 0
+    menu.ZIndex = 200
+    local corner = Instance.new("UICorner", menu)
+    corner.CornerRadius = UDim.new(0, 8)
+
+    local topLine = Instance.new("Frame", menu)
+    topLine.Size = UDim2.new(1, 0, 0, 2)
+    topLine.BackgroundColor3 = Color3.fromRGB(235, 5, 90)
+    topLine.BorderSizePixel = 0
+    topLine.ZIndex = 201
+
+    local title = Instance.new("TextLabel", menu)
+    title.Size = UDim2.new(1, -20, 0, 35)
+    title.Position = UDim2.new(0, 10, 0, 10)
+    title.Text = "Lebyss.xys Info"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.Code
+    title.TextSize = 22
+    title.BackgroundTransparency = 1
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.ZIndex = 201
+    ApplyGlitchGlow(title)
+
+    local closeBtn = Instance.new("TextButton", menu)
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -40, 0, 10)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    closeBtn.Font = Enum.Font.Code
+    closeBtn.TextSize = 18
+    closeBtn.ZIndex = 201
+    local closeCorner = Instance.new("UICorner", closeBtn)
+    closeCorner.CornerRadius = UDim.new(0, 4)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        PlaySound(SOUNDS.Click, 0.3)
+        menu:Destroy()
+    end)
+
+    -- левая панель — GAMES
+    local leftPanel = Instance.new("Frame", menu)
+    leftPanel.Size = UDim2.new(0.45, -15, 0.7, -40)
+    leftPanel.Position = UDim2.new(0.05, 0, 0.18, 0)
+    leftPanel.BackgroundTransparency = 1
+    leftPanel.ZIndex = 201
+
+    local gamesTitle = Instance.new("TextLabel", leftPanel)
+    gamesTitle.Size = UDim2.new(1, 0, 0, 28)
+    gamesTitle.Text = "GAMES"
+    gamesTitle.TextColor3 = Color3.fromRGB(235, 5, 90)
+    gamesTitle.Font = Enum.Font.Code
+    gamesTitle.TextSize = 18
+    gamesTitle.BackgroundTransparency = 1
+    gamesTitle.TextXAlignment = Enum.TextXAlignment.Left
+    gamesTitle.ZIndex = 202
+
+    local gamesList = Instance.new("Frame", leftPanel)
+    gamesList.Size = UDim2.new(1, 0, 1, -35)
+    gamesList.Position = UDim2.new(0, 0, 0, 33)
+    gamesList.BackgroundTransparency = 1
+    gamesList.ZIndex = 202
+
+    local gamesLayout = Instance.new("UIListLayout", gamesList)
+    gamesLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    gamesLayout.Padding = UDim.new(0, 6)
+
+    local function addGame(name, supported)
+        local line = Instance.new("Frame", gamesList)
+        line.Size = UDim2.new(1, 0, 0, 22)
+        line.BackgroundTransparency = 1
+        line.ZIndex = 203
+        local dot = Instance.new("TextLabel", line)
+        dot.Size = UDim2.new(0, 22, 1, 0)
+        dot.Text = "●"
+        dot.TextColor3 = supported and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        dot.Font = Enum.Font.Code
+        dot.TextSize = 20
+        dot.BackgroundTransparency = 1
+        dot.TextXAlignment = Enum.TextXAlignment.Center
+        dot.ZIndex = 204
+        local txt = Instance.new("TextLabel", line)
+        txt.Size = UDim2.new(1, -28, 1, 0)
+        txt.Position = UDim2.new(0, 26, 0, 0)
+        txt.Text = name
+        txt.TextColor3 = Color3.fromRGB(220, 220, 220)
+        txt.Font = Enum.Font.Code
+        txt.TextSize = 16
+        txt.BackgroundTransparency = 1
+        txt.TextXAlignment = Enum.TextXAlignment.Left
+        txt.ZIndex = 204
+    end
+
+    addGame("- project deLta", true)
+    addGame("- Phantom Forces", true)
+    addGame("- Rivals", true)
+    addGame("- UNIVERAL", true)
+    addGame("- Da Block", true)
+    addGame("- trident survival", false)
+    addGame("- arsenal", true)
+
+    -- правая панель — SUPPORTED / UNSUPPORTED
+    local rightPanel = Instance.new("Frame", menu)
+    rightPanel.Size = UDim2.new(0.45, -15, 0.7, -40)
+    rightPanel.Position = UDim2.new(0.55, -10, 0.18, 0)
+    rightPanel.BackgroundTransparency = 1
+    rightPanel.ZIndex = 201
+
+    local supportTitle = Instance.new("TextLabel", rightPanel)
+    supportTitle.Size = UDim2.new(1, 0, 0, 28)
+    supportTitle.Text = "supported"
+    supportTitle.TextColor3 = Color3.fromRGB(235, 5, 90)
+    supportTitle.Font = Enum.Font.Code
+    supportTitle.TextSize = 16
+    supportTitle.BackgroundTransparency = 1
+    supportTitle.TextXAlignment = Enum.TextXAlignment.Left
+    supportTitle.ZIndex = 202
+
+    local supportList = Instance.new("Frame", rightPanel)
+    supportList.Size = UDim2.new(1, 0, 0, 130)
+    supportList.Position = UDim2.new(0, 0, 0, 32)
+    supportList.BackgroundTransparency = 1
+    supportList.ZIndex = 202
+    local supportLayout = Instance.new("UIListLayout", supportList)
+    supportLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    supportLayout.Padding = UDim.new(0, 4)
+
+    local unsupportTitle = Instance.new("TextLabel", rightPanel)
+    unsupportTitle.Size = UDim2.new(1, 0, 0, 28)
+    unsupportTitle.Position = UDim2.new(0, 0, 0, 170)
+    unsupportTitle.Text = "X unsupported"
+    unsupportTitle.TextColor3 = Color3.fromRGB(235, 5, 90)
+    unsupportTitle.Font = Enum.Font.Code
+    unsupportTitle.TextSize = 16
+    unsupportTitle.BackgroundTransparency = 1
+    unsupportTitle.TextXAlignment = Enum.TextXAlignment.Left
+    unsupportTitle.ZIndex = 202
+
+    local unsupportList = Instance.new("Frame", rightPanel)
+    unsupportList.Size = UDim2.new(1, 0, 0, 60)
+    unsupportList.Position = UDim2.new(0, 0, 0, 202)
+    unsupportList.BackgroundTransparency = 1
+    unsupportList.ZIndex = 202
+    local unsupportLayout = Instance.new("UIListLayout", unsupportList)
+    unsupportLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    unsupportLayout.Padding = UDim.new(0, 4)
+
+    local function addExecutor(list, name, supported)
+        local line = Instance.new("Frame", list)
+        line.Size = UDim2.new(1, 0, 0, 22)
+        line.BackgroundTransparency = 1
+        line.ZIndex = 203
+        local dot = Instance.new("TextLabel", line)
+        dot.Size = UDim2.new(0, 22, 1, 0)
+        dot.Text = "●"
+        dot.TextColor3 = supported and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        dot.Font = Enum.Font.Code
+        dot.TextSize = 20
+        dot.BackgroundTransparency = 1
+        dot.TextXAlignment = Enum.TextXAlignment.Center
+        dot.ZIndex = 204
+        local txt = Instance.new("TextLabel", line)
+        txt.Size = UDim2.new(1, -28, 1, 0)
+        txt.Position = UDim2.new(0, 26, 0, 0)
+        txt.Text = name
+        txt.TextColor3 = Color3.fromRGB(220, 220, 220)
+        txt.Font = Enum.Font.Code
+        txt.TextSize = 16
+        txt.BackgroundTransparency = 1
+        txt.TextXAlignment = Enum.TextXAlignment.Left
+        txt.ZIndex = 204
+    end
+
+    addExecutor(supportList, "- volt", true)
+    addExecutor(supportList, "- deLta", true)
+    addExecutor(supportList, "- wave", true)
+    addExecutor(supportList, "- tNo", true)
+    addExecutor(supportList, "- abyss", true)
+
+    addExecutor(unsupportList, "- solara", false)
+    addExecutor(unsupportList, "- xeno", false)
+
+    return menu
+end
+
+-- [ЛОГИКА 7-МИ ЭТАПНОЙ ЗАГРУЗКИ + БОЛЬШИЕ БЫСТРЫЕ СНЕЖИНКИ ()]
 local function StartFatalityLoader()
     local sg = Instance.new("ScreenGui", SafeParent)
     local snowBg = Instance.new("Frame", sg)
@@ -104,113 +461,334 @@ local function StartFatalityLoader()
     ApplySnowEffect(snowBg, true)
 
     local f = Instance.new("Frame", sg)
-    f.Size = UserInputService.TouchEnabled and UDim2.new(0, 300, 0, 200) or UDim2.new(0, 350, 0, 230)
+    f.Size = UserInputService.TouchEnabled and UDim2.new(0, 300, 0, 200) or UDim2.new(0, 350, 0, 280)
     f.Position = UDim2.new(0.5, -(f.Size.X.Offset/2), 0.5, -(f.Size.Y.Offset/2))
     f.BackgroundColor3, f.BorderSizePixel = Color3.fromRGB(25, 25, 25), 0
     f.ClipsDescendants, f.ZIndex = true, 2
-    ApplySnowEffect(f, false)
+    ApplyFastSnow(f)
 
     local line = Instance.new("Frame", f)
     line.Size, line.BackgroundColor3, line.ZIndex = UDim2.new(1, 0, 0, 2), Color3.fromRGB(235, 5, 90), 5
 
-    local sub = Instance.new("TextLabel", f)
-    sub.Size, sub.Position, sub.BackgroundTransparency, sub.Font, sub.Text = UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 40), 1, Enum.Font.Code, "Subscription: 24 hours"
-    sub.TextColor3, sub.TextSize, sub.ZIndex = Color3.fromRGB(255, 255, 255), 18, 5
-    ApplyGlitchGlow(sub)
+    -- ИКОНКА-ШЕСТЕРЁНКА СЛЕВА СВЕРХУ
+    local iconButton = Instance.new("TextButton", f)
+    iconButton.Size = UDim2.new(0, 35, 0, 35)
+    iconButton.Position = UDim2.new(0, 8, 0, 6)
+    iconButton.BackgroundTransparency = 1
+    iconButton.Text = "⚙️"
+    iconButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    iconButton.TextSize = 28
+    iconButton.Font = Enum.Font.Code
+    iconButton.ZIndex = 10
 
-    local log = Instance.new("TextLabel", f)
-    log.Size, log.Position, log.BackgroundTransparency, log.Font, log.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 110), 1, Enum.Font.Code, "Status: Waiting..."
-    log.TextColor3, log.TextSize, log.ZIndex = Color3.fromRGB(200, 200, 200), 15, 5
-
-    local barB = Instance.new("Frame", f)
-    barB.Size, barB.Position, barB.BackgroundColor3, barB.ZIndex = UDim2.new(0, 240, 0, 4), UDim2.new(0.5, -120, 0, 145), Color3.fromRGB(40, 40, 40), 5
-    local barF = Instance.new("Frame", barB)
-    barF.Size, barF.BackgroundColor3, barF.ZIndex = UDim2.new(0, 0, 1, 0), Color3.fromRGB(255, 0, 60), 6
-
-    local btn = Instance.new("TextButton", f)
-    btn.Size, btn.Position, btn.BackgroundColor3, btn.Text = UDim2.new(0, 120, 0, 35), UDim2.new(0.5, -60, 0, 175), Color3.fromRGB(35, 35, 35), "LOAD"
-    btn.Font, btn.TextColor3, btn.TextSize, btn.ZIndex = Enum.Font.Code, Color3.fromRGB(235, 5, 90), 20, 10
-    btn.Visible = false
-    Instance.new("UIStroke", btn).Color = Color3.fromRGB(235, 5, 90)
+    local iconStroke = Instance.new("UIStroke", iconButton)
+    iconStroke.Color = Color3.fromRGB(235, 5, 90)
+    iconStroke.Thickness = 1.8
+    iconStroke.Transparency = 0.2
 
     task.spawn(function()
-        task.wait(1)
-        log.Text = "Stage 1/5: Authenticating"
-        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.3, 0, 1, 0)}):Play()
-        task.wait(1.2)
-        log.Text = "Stage 2/5: Fetching Data"
-        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.5, 0, 1, 0)}):Play()
-        task.wait(1)
-        log.Text = "Stage 3/5: Key Validated"
-        TweenService:Create(barF, TweenInfo.new(0.5), {Size = UDim2.new(0.6, 0, 1, 0)}):Play()
-        task.wait(0.6)
-        btn.Visible = true
-        ApplyGlitchGlow(btn)
+        while iconButton and iconButton.Parent do
+            TweenService:Create(iconButton, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1), {TextTransparency = 0.3}):Play()
+            wait(1.2)
+            TweenService:Create(iconButton, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1), {TextTransparency = 0}):Play()
+            wait(1.2)
+        end
+    end)
+
+    -- Звук при нажатии на шестерёнку
+    iconButton.MouseButton1Click:Connect(function()
+        PlaySound(SOUNDS.Pop, 0.3)
+    end)
+
+    -- АВАТАРКА ИГРОКА ВНИЗУ СЛЕВА
+    local avatar = Instance.new("ImageLabel", f)
+    avatar.Size = UDim2.new(0, 32, 0, 32)
+    avatar.Position = UDim2.new(0, 8, 1, -38)
+    avatar.BackgroundTransparency = 1
+    avatar.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    avatar.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    avatar.ZIndex = 10
+    local avatarStroke = Instance.new("UIStroke", avatar)
+    avatarStroke.Color = Color3.fromRGB(235, 5, 90)
+    avatarStroke.Thickness = 1.5
+    avatarStroke.Transparency = 0.3
+    local avatarCorner = Instance.new("UICorner", avatar)
+    avatarCorner.CornerRadius = UDim.new(1, 0)
+
+    task.spawn(function()
+        local player = Players.LocalPlayer
+        if not player then
+            player = Players:WaitForChild("LocalPlayer", 5)
+        end
+        if player then
+            local userId = player.UserId
+            local success, imageUrl = pcall(function()
+                return Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+            end)
+            if success and imageUrl and imageUrl ~= "" then
+                avatar.Image = imageUrl
+            else
+                avatar.Image = "rbxassetid://7077270342"
+            end
+        end
+    end)
+
+    -- ТЕКСТ ПОДПИСКИ – СВЕРХУ СЛЕВА, РЯДОМ С ШЕСТЕРЁНКОЙ
+    local sub = Instance.new("TextLabel", f)
+    sub.Size = UDim2.new(1, -50, 0, 40)
+    sub.Position = UDim2.new(0, 48, 0, 4)
+    sub.BackgroundTransparency = 1
+    sub.Font = Enum.Font.Code
+    sub.Text = "Subscription: 24 hours"
+    sub.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sub.TextSize = 18
+    sub.ZIndex = 5
+    sub.TextXAlignment = Enum.TextXAlignment.Left
+    sub.TextYAlignment = Enum.TextYAlignment.Top
+    ApplyGlitchGlow(sub)
+
+    -- меню информации
+    local infoMenu = nil
+    iconButton.MouseButton1Click:Connect(function()
+        if infoMenu and infoMenu.Parent then
+            PlaySound(SOUNDS.Click, 0.3)
+            infoMenu:Destroy()
+            infoMenu = nil
+        else
+            infoMenu = CreateInfoMenu(sg)
+        end
+    end)
+
+    -- статус
+    local log = Instance.new("TextLabel", f)
+    log.Size = UDim2.new(1, 0, 0, 30)
+    log.Position = UDim2.new(0, 0, 0, 110)
+    log.BackgroundTransparency = 1
+    log.Font = Enum.Font.Code
+    log.Text = "Status: Waiting..."
+    log.TextColor3 = Color3.fromRGB(200, 200, 200)
+    log.TextSize = 15
+    log.ZIndex = 5
+
+    -- прогресс-бар (7 этапов)
+    local barB = Instance.new("Frame", f)
+    barB.Size = UDim2.new(0, 240, 0, 4)
+    barB.Position = UDim2.new(0.5, -120, 0, 145)
+    barB.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    barB.ZIndex = 5
+    local barF = Instance.new("Frame", barB)
+    barF.Size = UDim2.new(0, 0, 1, 0)
+    barF.BackgroundColor3 = Color3.fromRGB(255, 0, 60)
+    barF.ZIndex = 6
+
+    -- кнопка LOAD
+    local btn = Instance.new("TextButton", f)
+    btn.Size = UDim2.new(0, 120, 0, 35)
+    btn.Position = UDim2.new(0.5, -60, 0, 175)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    btn.Text = "LOAD"
+    btn.Font = Enum.Font.Code
+    btn.TextColor3 = Color3.fromRGB(235, 5, 90)
+    btn.TextSize = 20
+    btn.ZIndex = 10
+    btn.Visible = false
+    Instance.new("UIStroke", btn).Color = Color3.fromRGB(235, 5, 90)
+    
+    btn.MouseButton1Click:Connect(function()
+        PlaySound(SOUNDS.Success, 0.5)
+    end)
+
+    -- ЭТАПЫ ЗАГРУЗКИ (7 ЭТАПОВ)
+    task.spawn(function()
+        task.wait(1); log.Text = "Stage 1/7: Auth Check"; TweenService:Create(barF, TweenInfo.new(0.8), {Size = UDim2.new(0.15, 0, 1, 0)}):Play()
+        task.wait(1); log.Text = "Stage 2/7: Data Load"; TweenService:Create(barF, TweenInfo.new(0.8), {Size = UDim2.new(0.3, 0, 1, 0)}):Play()
+        task.wait(1); log.Text = "Stage 3/7: Key Success"; TweenService:Create(barF, TweenInfo.new(0.8), {Size = UDim2.new(0.45, 0, 1, 0)}):Play()
+        task.wait(0.6); btn.Visible = true; ApplyGlitchGlow(btn)
     end)
 
     btn.MouseButton1Click:Connect(function()
         btn.Visible = false
-        log.Text = "Stage 4/5: Injecting"
-        TweenService:Create(barF, TweenInfo.new(1.2), {Size = UDim2.new(0.85, 0, 1, 0)}):Play()
-        task.wait(1.4)
-        log.Text = "Stage 5/5: Finalizing"
-        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+        log.Text = "Stage 4/7: Injecting"
+        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.6, 0, 1, 0)}):Play()
+        task.wait(1.2)
+        log.Text = "Stage 5/7: Finalizing"
+        TweenService:Create(barF, TweenInfo.new(1), {Size = UDim2.new(0.75, 0, 1, 0)}):Play()
+        task.wait(1.2)
+        log.Text = "Stage 6/7: Succeyess Script"
+        TweenService:Create(barF, TweenInfo.new(0.8), {Size = UDim2.new(0.9, 0, 1, 0)}):Play()
+        task.wait(1)
+        log.Text = "Stage 7/7: Support Executor"
+        TweenService:Create(barF, TweenInfo.new(0.8), {Size = UDim2.new(1, 0, 1, 0)}):Play()
         task.wait(1)
         log.Text = "SUCCESS!"
+        
+        -- ЗВУК УСПЕШНОГО ЗАВЕРШЕНИЯ
+        PlaySound(SOUNDS.Success, 0.6)
+        
         task.wait(0.5)
+        
+        CreateGlowingLebyssOverlay()
+        CreateFPSDisplay()
+        
         sg:Destroy()
-        RunIntro() 
+        RunIntro()
         FinalLaunch()
     end)
 end
 
--- [KEY AUTH SYSTEM - ПЕРВОЕ ОКНО]
+-- [KEY AUTH SYSTEM С ПРОВЕРКОЙ КЛЮЧА И ЗВУКАМИ + СОХРАНЕНИЕ КЛЮЧА]
 local function KeySystemInitial()
     local sg = Instance.new("ScreenGui", SafeParent)
     local f = Instance.new("Frame", sg)
-    f.Size = UDim2.new(0, 300, 0, 150)
-    f.Position = UDim2.new(0.5, -150, 0.5, -75)
-    f.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    f.BorderSizePixel = 0
-    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 10)
-
+    f.Size, f.Position, f.BackgroundColor3 = UDim2.new(0, 300, 0, 150), UDim2.new(0.5, -150, 0.5, -75), Color3.fromRGB(25, 25, 25)
+    Instance.new("UICorner", f)
     local line = Instance.new("Frame", f)
     line.Size, line.BackgroundColor3 = UDim2.new(1, 0, 0, 2), Color3.fromRGB(235, 5, 90)
 
     local title = Instance.new("TextLabel", f)
-    title.Size, title.Position, title.BackgroundTransparency, title.Font, title.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 10), 1, Enum.Font.Code, "Enter Key"
-    title.TextColor3, title.TextSize = Color3.fromRGB(255, 255, 255), 18
+    title.Size, title.Position, title.Text = UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 10), "Enter Key"
+    title.TextColor3, title.Font, title.TextSize, title.BackgroundTransparency = Color3.fromRGB(255, 255, 255), Enum.Font.Code, 18, 1
     ApplyGlitchGlow(title)
 
     local box = Instance.new("TextBox", f)
-    box.Size = UDim2.new(0, 240, 0, 30)
-    box.Position = UDim2.new(0.5, -120, 0, 50)
-    box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    box.Text = getgenv().script_key -- Ключ уже вписан
+    box.Size, box.Position, box.BackgroundColor3 = UDim2.new(0, 240, 0, 30), UDim2.new(0.5, -120, 0, 50), Color3.fromRGB(35, 35, 35)
+    box.Text = ""
+    box.PlaceholderText = "Insert key"
+    box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     box.TextColor3, box.Font, box.TextSize = Color3.fromRGB(200, 200, 200), Enum.Font.Code, 14
     Instance.new("UICorner", box)
+    
+    -- Загружаем сохранённый ключ, если есть, и вставляем в поле
+    local savedKey = LoadKeyFromFile()
+    if savedKey then
+        box.Text = savedKey
+    end
 
     local btn = Instance.new("TextButton", f)
     btn.Size, btn.Position, btn.BackgroundColor3, btn.Text = UDim2.new(0, 100, 0, 30), UDim2.new(0.5, -50, 0, 95), Color3.fromRGB(45, 45, 45), "Login"
     btn.TextColor3, btn.Font, btn.TextSize = Color3.fromRGB(255, 255, 255), Enum.Font.Code, 16
     Instance.new("UICorner", btn)
-    Instance.new("UIStroke", btn).Color = Color3.fromRGB(235, 5, 90)
+
+    local errorLabel = Instance.new("TextLabel", f)
+    errorLabel.Size = UDim2.new(1, 0, 0, 20)
+    errorLabel.Position = UDim2.new(0, 0, 0, 130)
+    errorLabel.BackgroundTransparency = 1
+    errorLabel.Font = Enum.Font.Code
+    errorLabel.Text = "Invalid key!"
+    errorLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+    errorLabel.TextSize = 14
+    errorLabel.Visible = false
+    errorLabel.ZIndex = 10
 
     btn.MouseButton1Click:Connect(function()
-        if box.Text == getgenv().script_key then
-            btn.Text = "Correct!"
-            task.wait(0.5)
+        PlaySound(SOUNDS.Click, 0.4)
+        
+        local enteredKey = box.Text
+        if enteredKey == getgenv().script_key then
+            PlaySound(SOUNDS.Success, 0.5)
+            -- СОХРАНЯЕМ КЛЮЧ НАВСЕГДА
+            SaveKeyToFile(enteredKey)
             sg:Destroy()
-            StartFatalityLoader() -- Переход ко второму меню
+            StartFatalityLoader()
         else
-            btn.Text = "Wrong Key"
+            PlaySound(SOUNDS.Error, 0.5)
+            errorLabel.Visible = true
+            local originalPos = f.Position
+            for i = 1, 5 do
+                f.Position = originalPos + UDim2.new(0, math.random(-3, 3), 0, 0)
+                task.wait(0.02)
+                f.Position = originalPos
+                task.wait(0.02)
+            end
             task.wait(1)
-            btn.Text = "Login"
+            errorLabel.Visible = false
         end
     end)
 end
 
--- [START SEQUENCE]
-task.spawn(RunIntro)
-task.wait(3.5)
-task.spawn(KeySystemInitial) -- Начинаем с ввода ключа
+-- [ПРЕДУПРЕЖДЕНИЕ КАК НА ФОТО – ВСЕГДА ПОКАЗЫВАЕТСЯ, КЛЮЧ ПРОВЕРЯЕТСЯ ПОТОМ]
+local function ShowWarning()
+    local sg = Instance.new("ScreenGui", SafeParent)
+
+    local frame = Instance.new("Frame", sg)
+    frame.Size = UDim2.new(0, 450, 0, 220)
+    frame.Position = UDim2.new(0.5, -225, 0.5, -110)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    frame.BorderSizePixel = 0
+
+    local topLine = Instance.new("Frame", frame)
+    topLine.Size = UDim2.new(1, 0, 0, 2)
+    topLine.BackgroundColor3 = Color3.fromRGB(235, 5, 90)
+    topLine.BorderSizePixel = 0
+    topLine.ZIndex = 2
+
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1, -10, 0, 30)
+    title.Position = UDim2.new(0, 10, 0, 0)
+    title.Text = "Lebyss.xys [" .. GetExecutor() .. "]"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.SourceSans
+    title.TextSize = 18
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.BackgroundTransparency = 1
+
+    local msg = Instance.new("TextLabel", frame)
+    msg.Size = UDim2.new(1, -80, 0, 100)
+    msg.Position = UDim2.new(0, 70, 0, 45)
+    msg.Text = "Are you sure you want to run Lebyss.xys?\n\nYou can be BANNED for this script!\n\nAre You Sure You Want to Continue?"
+    msg.TextWrapped = true
+    msg.TextColor3 = Color3.fromRGB(200, 200, 200)
+    msg.Font = Enum.Font.SourceSans
+    msg.TextSize = 16
+    msg.TextXAlignment = Enum.TextXAlignment.Left
+    msg.BackgroundTransparency = 1
+
+    local warnIcon = Instance.new("ImageLabel", frame)
+    warnIcon.Size = UDim2.new(0, 40, 0, 40)
+    warnIcon.Position = UDim2.new(0, 20, 0, 50)
+    warnIcon.Image = "rbxassetid://11419713314"
+    warnIcon.BackgroundTransparency = 1
+    warnIcon.ImageColor3 = Color3.fromRGB(235, 5, 90)
+
+    local btnYes = Instance.new("TextButton", frame)
+    btnYes.Size = UDim2.new(0, 80, 0, 30)
+    btnYes.Position = UDim2.new(0.55, 0, 0.8, 0)
+    btnYes.Text = "Yes"
+    btnYes.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    btnYes.TextColor3 = Color3.fromRGB(235, 5, 90)
+    btnYes.Font = Enum.Font.SourceSans
+    btnYes.TextSize = 16
+    btnYes.BorderSizePixel = 0
+    local strokeYes = Instance.new("UIStroke", btnYes)
+    strokeYes.Color = Color3.fromRGB(235, 5, 90)
+    strokeYes.Thickness = 1.5
+
+    local btnNo = Instance.new("TextButton", frame)
+    btnNo.Size = UDim2.new(0, 80, 0, 30)
+    btnNo.Position = UDim2.new(0.78, 0, 0.8, 0)
+    btnNo.Text = "No"
+    btnNo.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    btnNo.TextColor3 = Color3.fromRGB(235, 5, 90)
+    btnNo.Font = Enum.Font.SourceSans
+    btnNo.TextSize = 16
+    btnNo.BorderSizePixel = 0
+    local strokeNo = Instance.new("UIStroke", btnNo)
+    strokeNo.Color = Color3.fromRGB(235, 5, 90)
+    strokeNo.Thickness = 1.5
+
+    btnNo.MouseButton1Click:Connect(function()
+        PlaySound(SOUNDS.Click, 0.4)
+        sg:Destroy()
+    end)
+    
+    btnYes.MouseButton1Click:Connect(function()
+        PlaySound(SOUNDS.Whoosh, 0.5)
+        sg:Destroy()
+        RunIntro()
+        task.wait(3.5)
+        KeySystemInitial()
+    end)
+end
+
+-- ЗАПУСК: всегда показываем предупреждение
+ShowWarning()
